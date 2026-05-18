@@ -3,81 +3,751 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="description"
-        content="A clean, responsive Todo List web application with dark mode and persistent storage">
-    <meta name="author" content="Your Name">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo Suite | Smart Task Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <title>AGT-Todo | Simple Todo List</title>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/style.css">
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
 
-    <!-- Favicon (optional - will use emoji for now) -->
-    <link rel="icon" type="image/x-icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>">
+        .bg-animation .circle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+            }
+        }
+
+        /* Main Container */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        /* Header Section */
+        .hero {
+            text-align: center;
+            margin-bottom: 80px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #ffd89b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 10px;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            color: white;
+            margin-top: 20px;
+        }
+
+        /* Cards Container */
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 80px;
+        }
+
+        /* Card Styles */
+        .mode-card {
+            background: white;
+            border-radius: 30px;
+            width: 380px;
+            padding: 40px 30px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 0.8s ease;
+            animation-fill-mode: both;
+        }
+
+        .mode-card:nth-child(1) {
+            animation-delay: 0.2s;
+        }
+
+        .mode-card:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .mode-card:hover .card-glow {
+            opacity: 1;
+        }
+
+        /* Card Icons */
+        .card-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Card Content */
+        .mode-card h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .mode-subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            border-bottom: 2px solid #f0f0f0;
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        /* Feature List */
+        .feature-list {
+            list-style: none;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Launch Button */
+        .launch-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .launch-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .launch-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .launch-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .launch-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Stats Section */
+        .stats-section {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            flex-wrap: wrap;
+            margin-top: 60px;
+        }
+
+        .stat-item {
+            text-align: center;
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 80px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        /* Language Selector */
+        .language-selector {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 15px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .lang-btn:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .lang-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .mode-card {
+                width: 90%;
+                max-width: 380px;
+            }
+
+            .cards-container {
+                gap: 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 40px 15px;
+            }
+
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .mode-card {
+                padding: 30px 20px;
+            }
+
+            .card-icon {
+                font-size: 3.5rem;
+            }
+
+            .mode-card h2 {
+                font-size: 1.5rem;
+            }
+
+            .language-selector {
+                bottom: 10px;
+                right: 10px;
+                padding: 5px 10px;
+            }
+
+            .lang-btn {
+                padding: 3px 10px;
+                font-size: 12px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Header with Title & Theme Toggle -->
-        <header class="header">
-            <h1 class="app-title">
-                <span class="title-emoji">📝</span>
-                AGT-Todo
-            </h1>
-            <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark/light mode">
-                🌙
-            </button>
-        </header>
+    <!-- Animated Background -->
+    <div class="bg-animation" id="bgAnimation"></div>
 
-        <!-- Add Task Section -->
-        <section class="add-task-section">
-            <div class="input-group">
-                <input type="text" id="taskInput" class="task-input"
-                    placeholder="What needs to be done? (max 120 chars)" maxlength="120" autocomplete="off">
-                <button id="addBtn" class="btn btn-primary">
-                    + Add
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <div class="hero-badge" id="heroBadge">
+                ⚡ Productivity Suite 2.0
+            </div>
+            <h1 id="mainTitle">
+                Master Your Tasks<br>
+                Two Powerful Ways
+            </h1>
+            <p id="mainSubtitle">
+                Choose the perfect tool for your workflow
+            </p>
+        </div>
+
+        <!-- Cards Container -->
+        <div class="cards-container">
+            <!-- Classic Todo Card -->
+            <div class="mode-card" data-mode="classic">
+                <div class="card-glow"></div>
+                <div class="card-icon">📝</div>
+                <h2 id="classicTitle">Classic Todo</h2>
+                <div class="mode-subtitle" id="classicSubtitle">Simple & Fast</div>
+                <ul class="feature-list" id="classicFeatures">
+                    <li>Simple task management</li>
+                    <li>Dark/Light mode</li>
+                    <li>Image attachments</li>
+                    <li>Keyboard shortcuts</li>
+                    <li>LocalStorage persistence</li>
+                    <li>Clean & intuitive UI</li>
+                </ul>
+                <button class="launch-btn" onclick="navigateToMode('classic')">
+                    <span id="classicBtnText">Launch Classic Todo →</span>
                 </button>
             </div>
-            <div id="errorMessage" class="error-message" style="display: none;"></div>
-        </section>
 
-        <!-- Filter Controls -->
-        <section class="filter-section">
-            <div class="filter-buttons">
-                <button data-filter="all" class="filter-btn active">All</button>
-                <button data-filter="active" class="filter-btn">Active</button>
-                <button data-filter="completed" class="filter-btn">Completed</button>
+            <!-- Programmable Todo Card -->
+            <div class="mode-card" data-mode="programmable">
+                <div class="card-glow"></div>
+                <div class="card-icon">⏰</div>
+                <h2 id="programmableTitle">Programmable Todo</h2>
+                <div class="mode-subtitle" id="programmableSubtitle">Smart & Timely</div>
+                <ul class="feature-list" id="programmableFeatures">
+                    <li>Set due dates & times</li>
+                    <li>Browser notifications</li>
+                    <li>Auto-complete at deadline</li>
+                    <li>Smart reminders</li>
+                    <li>Priority & categories</li>
+                    <li>Calendar integration</li>
+                </ul>
+                <button class="launch-btn" onclick="navigateToMode('programmable')">
+                    <span id="programmableBtnText">Launch Programmable Todo →</span>
+                </button>
             </div>
-            <button id="clearCompletedBtn" class="btn btn-secondary">
-                Clear Completed
-            </button>
-        </section>
+        </div>
 
-        <!-- Task List -->
-        <section class="task-list-section">
-            <ul id="taskList" class="task-list">
-                <!-- Tasks will be dynamically injected here -->
-                <li class="empty-state">
-                    <div class="empty-state-content">
-                        <span class="empty-emoji">📭</span>
-                        <p>Your todo list is empty</p>
-                        <small>Add a task above to get started</small>
-                    </div>
-                </li>
-            </ul>
-        </section>
+        <!-- Stats Section -->
+        <div class="stats-section">
+            <div class="stat-item">
+                <span class="stat-number" id="statTasks">0</span>
+                <span class="stat-label" id="statTasksLabel">Tasks Managed</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="statUsers">500+</span>
+                <span class="stat-label" id="statUsersLabel">Happy Users</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="statReminders">0</span>
+                <span class="stat-label" id="statRemindersLabel">Reminders Sent</span>
+            </div>
+        </div>
 
-        <!-- Footer with Remaining Tasks Counter -->
-        <footer class="footer">
-            <span id="remainingCount">0</span> tasks remaining
-        </footer>
+        <!-- Footer -->
+        <div class="footer">
+            <p id="footerText">🚀 Boost your productivity | Made with ❤️</p>
+            <div style="margin-top: 15px;">
+                <a href="#" id="aboutLink">About</a> •
+                <a href="#" id="featuresLink">Features</a> •
+                <a href="#" id="contactLink">Contact</a>
+            </div>
+        </div>
     </div>
 
-    <!-- JavaScript -->
-    <script src="js/app.js"></script>
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <button class="lang-btn" onclick="setLanguage('en')">🇬🇧 English</button>
+        <button class="lang-btn" onclick="setLanguage('fr')">🇫🇷 Français</button>
+    </div>
+
+    <script>
+        // Translation Dictionary
+        const translations = {
+            en: {
+                heroBadge: "⚡ Productivity Suite 2.0",
+                mainTitle: "Master Your Tasks<br>Two Powerful Ways",
+                mainSubtitle: "Choose the perfect tool for your workflow",
+                classicTitle: "Classic Todo",
+                classicSubtitle: "Simple & Fast",
+                classicFeatures: [
+                    "Simple task management",
+                    "Dark/Light mode",
+                    "Image attachments",
+                    "Keyboard shortcuts",
+                    "LocalStorage persistence",
+                    "Clean & intuitive UI"
+                ],
+                classicBtnText: "Launch Classic Todo →",
+                programmableTitle: "Programmable Todo",
+                programmableSubtitle: "Smart & Timely",
+                programmableFeatures: [
+                    "Set due dates & times",
+                    "Browser notifications",
+                    "Auto-complete at deadline",
+                    "Smart reminders",
+                    "Priority & categories",
+                    "Calendar integration"
+                ],
+                programmableBtnText: "Launch Programmable Todo →",
+                statTasksLabel: "Tasks Managed",
+                statUsersLabel: "Happy Users",
+                statRemindersLabel: "Reminders Sent",
+                footerText: "🚀 Boost your productivity | Made with ❤️",
+                aboutLink: "About",
+                featuresLink: "Features",
+                contactLink: "Contact"
+            },
+            fr: {
+                heroBadge: "⚡ Suite de Productivité 2.0",
+                mainTitle: "Maîtrisez Vos Tâches<br>Deux Façons Puissantes",
+                mainSubtitle: "Choisissez l'outil parfait pour votre workflow",
+                classicTitle: "Todo Classique",
+                classicSubtitle: "Simple & Rapide",
+                classicFeatures: [
+                    "Gestion simple des tâches",
+                    "Mode sombre/clair",
+                    "Pièces jointes d'images",
+                    "Raccourcis clavier",
+                    "Stockage local",
+                    "Interface propre et intuitive"
+                ],
+                classicBtnText: "Lancer Todo Classique →",
+                programmableTitle: "Todo Programmable",
+                programmableSubtitle: "Intelligent & Temporel",
+                programmableFeatures: [
+                    "Définir dates et heures",
+                    "Notifications navigateur",
+                    "Auto-complétion à échéance",
+                    "Rappels intelligents",
+                    "Priorités et catégories",
+                    "Intégration calendrier"
+                ],
+                programmableBtnText: "Lancer Todo Programmable →",
+                statTasksLabel: "Tâches Gérées",
+                statUsersLabel: "Utilisateurs Heureux",
+                statRemindersLabel: "Rappels Envoyés",
+                footerText: "🚀 Boostez votre productivité | Fait avec ❤️",
+                aboutLink: "À propos",
+                featuresLink: "Fonctionnalités",
+                contactLink: "Contact"
+            }
+        };
+
+        let currentLanguage = 'en';
+
+        // Navigation function
+        function navigateToMode(mode) {
+            if (mode === 'classic') {
+                window.location.href = '../../classic/index.html';
+            } else if (mode === 'programmable') {
+                window.location.href = '../../programmable/index.html';
+            }
+        }
+
+        // Update all UI text based on language
+        function updateUILanguage() {
+            const t = translations[currentLanguage];
+            if (!t) return;
+
+            // Update all elements with IDs
+            document.getElementById('heroBadge').innerHTML = t.heroBadge;
+            document.getElementById('mainTitle').innerHTML = t.mainTitle;
+            document.getElementById('mainSubtitle').textContent = t.mainSubtitle;
+            document.getElementById('classicTitle').textContent = t.classicTitle;
+            document.getElementById('classicSubtitle').textContent = t.classicSubtitle;
+            document.getElementById('programmableTitle').textContent = t.programmableTitle;
+            document.getElementById('programmableSubtitle').textContent = t.programmableSubtitle;
+            document.getElementById('classicBtnText').textContent = t.classicBtnText;
+            document.getElementById('programmableBtnText').textContent = t.programmableBtnText;
+            document.getElementById('statTasksLabel').textContent = t.statTasksLabel;
+            document.getElementById('statUsersLabel').textContent = t.statUsersLabel;
+            document.getElementById('statRemindersLabel').textContent = t.statRemindersLabel;
+            document.getElementById('footerText').innerHTML = t.footerText;
+            document.getElementById('aboutLink').textContent = t.aboutLink;
+            document.getElementById('featuresLink').textContent = t.featuresLink;
+            document.getElementById('contactLink').textContent = t.contactLink;
+
+            // Update feature lists
+            const classicFeatureItems = document.querySelectorAll('#classicFeatures li');
+            t.classicFeatures.forEach((text, index) => {
+                if (classicFeatureItems[index]) {
+                    classicFeatureItems[index].textContent = text;
+                }
+            });
+
+            const programmableFeatureItems = document.querySelectorAll('#programmableFeatures li');
+            t.programmableFeatures.forEach((text, index) => {
+                if (programmableFeatureItems[index]) {
+                    programmableFeatureItems[index].textContent = text;
+                }
+            });
+
+            // Update active button styling
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if ((currentLanguage === 'en' && btn.textContent.includes('English')) ||
+                    (currentLanguage === 'fr' && btn.textContent.includes('Français'))) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Save to localStorage
+            localStorage.setItem('app_language', currentLanguage);
+
+            console.log(`✅ Language changed to: ${currentLanguage.toUpperCase()}`);
+        }
+
+        // Set language function (called by buttons)
+        function setLanguage(lang) {
+            if (lang === 'en' || lang === 'fr') {
+                currentLanguage = lang;
+                updateUILanguage();
+                // Show feedback
+                showToast(`Language changed to ${lang === 'en' ? 'English' : 'Français'}`);
+            }
+        }
+
+        // Simple toast notification
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                right: 20px;
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 10px;
+                z-index: 2000;
+                animation: fadeInUp 0.3s ease;
+                font-size: 14px;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // Animated Background
+        function createBackgroundAnimation() {
+            const container = document.getElementById('bgAnimation');
+            const numCircles = 15;
+
+            for (let i = 0; i < numCircles; i++) {
+                const circle = document.createElement('div');
+                circle.className = 'circle';
+                const size = Math.random() * 200 + 50;
+                circle.style.width = size + 'px';
+                circle.style.height = size + 'px';
+                circle.style.left = Math.random() * 100 + '%';
+                circle.style.top = Math.random() * 100 + '%';
+                circle.style.animationDelay = Math.random() * 10 + 's';
+                circle.style.animationDuration = Math.random() * 15 + 10 + 's';
+                container.appendChild(circle);
+            }
+        }
+
+        // Animate stats counter
+        function animateStats() {
+            let tasks = 0;
+            let reminders = 0;
+            const targetTasks = 1247;
+            const targetReminders = 3421;
+
+            const interval = setInterval(() => {
+                if (tasks < targetTasks) {
+                    tasks += Math.ceil(targetTasks / 50);
+                    document.getElementById('statTasks').textContent = tasks.toLocaleString();
+                }
+                if (reminders < targetReminders) {
+                    reminders += Math.ceil(targetReminders / 50);
+                    document.getElementById('statReminders').textContent = reminders.toLocaleString();
+                }
+                if (tasks >= targetTasks && reminders >= targetReminders) {
+                    clearInterval(interval);
+                    document.getElementById('statTasks').textContent = targetTasks.toLocaleString();
+                    document.getElementById('statReminders').textContent = targetReminders.toLocaleString();
+                }
+            }, 40);
+        }
+
+        // Load saved language
+        function loadSavedLanguage() {
+            const saved = localStorage.getItem('app_language');
+            if (saved === 'fr') {
+                currentLanguage = 'fr';
+            } else {
+                currentLanguage = 'en';
+            }
+            updateUILanguage();
+        }
+
+        // Add click event listeners to cards
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON' && !e.target.classList.contains('launch-btn')) {
+                    const mode = card.getAttribute('data-mode');
+                    navigateToMode(mode);
+                }
+            });
+        });
+
+        // Initialize
+        createBackgroundAnimation();
+        animateStats();
+        loadSavedLanguage();
+
+        console.log('✅ Landing page loaded - Language switcher working!');
+    </script>
 </body>
 
 </html>

@@ -1,73 +1,8 @@
-/* ========================================
-   CSS VARIABLES (Light Theme - Default)
-   ======================================== */
-:root {
-    /* Colors */
-    --bg-primary: #f9f9ff;
-    --bg-secondary: #ffffff;
-    --text-primary: #111111;
-    --text-secondary: #666666;
-    --border-color: #e0e0e0;
-    --accent-color: #6366f1;
-    --accent-hover: #4f46e5;
-    --danger-color: #ef4444;
-    --danger-hover: #dc2626;
-    --success-color: #10b981;
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-    /* Spacing */
-    --spacing-xs: 4px;
-    --spacing-sm: 8px;
-    --spacing-md: 16px;
-    --spacing-lg: 24px;
-    --spacing-xl: 32px;
-
-    /* Border Radius */
-    --radius-sm: 6px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-
-    /* Transitions */
-    --transition-fast: 0.2s ease;
-    --transition-normal: 0.3s ease;
-}
-
-/* Dark Theme Variables */
-body.dark-theme {
-    --bg-primary: #1e1e2f;
-    --bg-secondary: #2a2a3b;
-    --text-primary: #eeeeee;
-    --text-secondary: #a0a0a0;
-    --border-color: #3a3a4a;
-    --accent-color: #818cf8;
-    --accent-hover: #6366f1;
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.25);
-}
-
-/* ========================================
-   RESET & BASE STYLES
-   ======================================== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    line-height: 1.5;
-    transition: background var(--transition-normal), color var(--transition-normal);
-    min-height: 100vh;
-    padding: var(--spacing-lg);
-}
+/* Classic Todo Specific Styles */
 
 .container {
     max-width: 700px;
-    margin: 0 auto;
+    margin: var(--spacing-xl) auto;
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
@@ -75,49 +10,6 @@ body {
     transition: background var(--transition-normal);
 }
 
-/* ========================================
-   HEADER
-   ======================================== */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-xl);
-    padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--border-color);
-}
-
-.app-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-}
-
-.title-emoji {
-    font-size: 1.75rem;
-}
-
-.theme-toggle {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: 1.25rem;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.theme-toggle:hover {
-    transform: scale(1.05);
-    background: var(--accent-color);
-    border-color: var(--accent-color);
-}
-
-/* ========================================
-   ADD TASK SECTION
-   ======================================== */
 .add-task-section {
     margin-bottom: var(--spacing-lg);
 }
@@ -190,9 +82,6 @@ body.dark-theme .error-message {
     color: #fecaca;
 }
 
-/* ========================================
-   FILTER SECTION
-   ======================================== */
 .filter-section {
     display: flex;
     justify-content: space-between;
@@ -228,9 +117,6 @@ body.dark-theme .error-message {
     border-color: var(--accent-color);
 }
 
-/* ========================================
-   TASK LIST
-   ======================================== */
 .task-list {
     list-style: none;
     margin-bottom: var(--spacing-lg);
@@ -295,6 +181,16 @@ body.dark-theme .error-message {
     transition: all var(--transition-fast);
 }
 
+.attach-image-btn {
+    color: var(--accent-color);
+}
+
+.attach-image-btn:hover {
+    background: var(--accent-color);
+    color: white;
+    transform: scale(1.1);
+}
+
 .edit-btn {
     color: var(--accent-color);
 }
@@ -315,7 +211,83 @@ body.dark-theme .error-message {
     transform: scale(1.1);
 }
 
-/* Empty State */
+/* Image Attachment */
+.task-image {
+    margin-top: var(--spacing-sm);
+    position: relative;
+    display: inline-block;
+}
+
+.task-image-thumb {
+    max-width: 80px;
+    max-height: 80px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+    border: 2px solid var(--border-color);
+}
+
+.task-image-thumb:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-md);
+}
+
+.remove-image-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.remove-image-btn:hover {
+    background: var(--danger-hover);
+    transform: scale(1.1);
+}
+
+.image-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+    cursor: pointer;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-modal.active {
+    display: flex;
+}
+
+.modal-image {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: var(--radius-lg);
+}
+
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 40px;
+    color: white;
+    font-size: 40px;
+    cursor: pointer;
+}
+
 .empty-state {
     text-align: center;
     padding: var(--spacing-xl);
@@ -333,9 +305,6 @@ body.dark-theme .error-message {
     font-size: 3rem;
 }
 
-/* ========================================
-   FOOTER
-   ======================================== */
 .footer {
     text-align: center;
     padding-top: var(--spacing-md);
@@ -344,20 +313,42 @@ body.dark-theme .error-message {
     font-size: 0.875rem;
 }
 
-/* ========================================
-   RESPONSIVE DESIGN
-   ======================================== */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.task-item {
+    animation: fadeIn 0.3s ease;
+}
+
 @media (max-width: 600px) {
-    body {
-        padding: var(--spacing-md);
-    }
-
     .container {
+        margin: var(--spacing-md);
         padding: var(--spacing-lg);
-    }
-
-    .app-title {
-        font-size: 1.25rem;
     }
 
     .input-group {
@@ -380,66 +371,4 @@ body.dark-theme .error-message {
     .task-actions {
         align-self: flex-end;
     }
-}
-
-/* ========================================
-   ANIMATIONS
-   ======================================== */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.task-item {
-    animation: fadeIn 0.3s ease;
-}
-
-/* Counter animation */
-@keyframes pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.1);
-    }
-}
-
-.counter-update {
-    animation: pulse 0.3s ease;
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
-}
-
-.undo-notification button {
-    background: var(--accent-color);
-    border: none;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-sm);
-    color: white;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.undo-notification button:hover {
-    background: var(--accent-hover);
 }
