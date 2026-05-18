@@ -1,0 +1,24 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+*.sublime-workspace
+
+# Logs
+*.log
+npm-debug.log*
+
+# Optional: if you use any build tools (not needed for this project)
+node_modules/
+dist/

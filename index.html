@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description"
+        content="A clean, responsive Todo List web application with dark mode and persistent storage">
+    <meta name="author" content="Your Name">
+
+    <title>AGT-Todo | Simple Todo List</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Favicon (optional - will use emoji for now) -->
+    <link rel="icon" type="image/x-icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>">
+</head>
+
+<body>
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header with Title & Theme Toggle -->
+        <header class="header">
+            <h1 class="app-title">
+                <span class="title-emoji">📝</span>
+                AGT-Todo
+            </h1>
+            <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark/light mode">
+                🌙
+            </button>
+        </header>
+
+        <!-- Add Task Section -->
+        <section class="add-task-section">
+            <div class="input-group">
+                <input type="text" id="taskInput" class="task-input"
+                    placeholder="What needs to be done? (max 120 chars)" maxlength="120" autocomplete="off">
+                <button id="addBtn" class="btn btn-primary">
+                    + Add
+                </button>
+            </div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+        </section>
+
+        <!-- Filter Controls -->
+        <section class="filter-section">
+            <div class="filter-buttons">
+                <button data-filter="all" class="filter-btn active">All</button>
+                <button data-filter="active" class="filter-btn">Active</button>
+                <button data-filter="completed" class="filter-btn">Completed</button>
+            </div>
+            <button id="clearCompletedBtn" class="btn btn-secondary">
+                Clear Completed
+            </button>
+        </section>
+
+        <!-- Task List -->
+        <section class="task-list-section">
+            <ul id="taskList" class="task-list">
+                <!-- Tasks will be dynamically injected here -->
+                <li class="empty-state">
+                    <div class="empty-state-content">
+                        <span class="empty-emoji">📭</span>
+                        <p>Your todo list is empty</p>
+                        <small>Add a task above to get started</small>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Footer with Remaining Tasks Counter -->
+        <footer class="footer">
+            <span id="remainingCount">0</span> tasks remaining
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/app.js"></script>
+</body>
+
+</html>
