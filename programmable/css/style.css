@@ -455,6 +455,166 @@
     transform: scale(1.2);
 }
 
+/* ========================================
+   ALARM MODAL
+   ======================================== */
+
+.debug-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+    z-index: 900;
+    font-family: monospace;
+}
+
+.alarm-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 20000;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-md);
+}
+
+.alarm-modal.active {
+    display: flex;
+}
+
+.alarm-modal-content {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.3), var(--shadow-lg);
+    animation: alarmPulse 1s ease-in-out infinite;
+}
+
+.alarm-icon {
+    font-size: 4rem;
+    animation: alarmShake 0.4s ease-in-out infinite;
+}
+
+.alarm-kind-label {
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--danger-color);
+    margin-bottom: var(--spacing-sm);
+}
+
+.alarm-task-title {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-sm);
+    word-break: break-word;
+}
+
+.alarm-task-desc {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+    word-break: break-word;
+}
+
+.alarm-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    font-size: 0.85rem;
+}
+
+.alarm-meta .meta-item {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+.alarm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    justify-content: center;
+}
+
+.alarm-btn {
+    flex: 1;
+    min-width: 130px;
+    padding: var(--spacing-md);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.alarm-btn:hover {
+    transform: translateY(-2px);
+}
+
+.alarm-btn-snooze {
+    background: var(--warning-color);
+    color: white;
+}
+
+.alarm-btn-complete {
+    background: var(--success-color);
+    color: white;
+}
+
+.alarm-btn-dismiss {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+@keyframes alarmPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.3), var(--shadow-lg);
+    }
+
+    50% {
+        box-shadow: 0 0 0 14px rgba(239, 68, 68, 0.15), var(--shadow-lg);
+    }
+}
+
+@keyframes alarmShake {
+
+    0%,
+    100% {
+        transform: rotate(-10deg);
+    }
+
+    50% {
+        transform: rotate(10deg);
+    }
+}
+
+@media (max-width: 480px) {
+    .alarm-actions {
+        flex-direction: column;
+    }
+
+    .alarm-btn {
+        min-width: 100%;
+    }
+}
+
 /* Remove image button */
 .remove-image-btn {
     background: var(--danger-color);

@@ -9,10 +9,20 @@
 
 let tasks = [];
 let currentFilter = "all";
-let notificationInterval = null;
 let notificationPermission = false;
 let imageDB = null;
 let currentUploadingTaskId = null;
+
+// Alarm system state
+const ALARM_CHECK_MS = 5000;
+const SNOOZE_MINUTES = 5;
+let alarmCheckIntervalId = null;
+let countdownIntervalId = null;
+let countdownSecondsLeft = ALARM_CHECK_MS / 1000;
+let activeAlarm = null; // { taskId, kind: 'reminder' | 'due' }
+let alarmQueue = [];
+let ringIntervalId = null;
+let alarmAudioCtx = null;
 
 // ========================================
 // DOM ELEMENTS
@@ -33,7 +43,22 @@ const domElements = {
     completedCount: document.getElementById('completedCount'),
     upcomingCount: document.getElementById('upcomingCount'),
     overdueCount: document.getElementById('overdueCount'),
-    themeToggle: document.getElementById('themeToggle')
+    themeToggle: document.getElementById('themeToggle'),
+    alarmModal: document.getElementById('alarmModal'),
+    alarmKindLabel: document.getElementById('alarmKindLabel'),
+    alarmTaskTitle: document.getElementById('alarmTaskTitle'),
+    alarmTaskDesc: document.getElementById('alarmTaskDesc'),
+    alarmPriority: document.getElementById('alarmPriority'),
+    alarmCategory: document.getElementById('alarmCategory'),
+    alarmDueTime: document.getElementById('alarmDueTime'),
+    alarmSnoozeBtn: document.getElementById('alarmSnoozeBtn'),
+    alarmCompleteBtn: document.getElementById('alarmCompleteBtn'),
+    alarmDismissBtn: document.getElementById('alarmDismissBtn'),
+    testAlarmBtn: document.getElementById('testAlarmBtn'),
+    nextCheckIndicator: document.getElementById('nextCheckIndicator'),
+    notificationBanner: document.getElementById('notificationBanner'),
+    enableNotificationsBtn: document.getElementById('enableNotificationsBtn'),
+    dismissBannerBtn: document.getElementById('dismissBannerBtn')
 };
 
 // ========================================
@@ -247,7 +272,9 @@ function saveTasks() {
         priority: task.priority,
         category: task.category,
         reminderMinutes: task.reminderMinutes,
-        reminderSent: task.reminderSent || false,
+        reminderFired: task.reminderFired || false,
+        dueFired: task.dueFired || false,
+        snoozedUntil: task.snoozedUntil || null,
         imageId: task.imageId || null
     }));
     localStorage.setItem('programmable_todo_app', JSON.stringify(tasksToSave));
@@ -393,13 +420,22 @@ async function addTask() {
         priority: domElements.priority.value,
         category: domElements.category.value,
         reminderMinutes: parseInt(domElements.reminderMinutes.value),
-        reminderSent: false,
+        reminderFired: false,
+        dueFired: false,
+        snoozedUntil: null,
         imageId: null
     };
 
     tasks.unshift(newTask);
     saveTasks();
     renderTasks();
+
+    // Request notification permission the first time a task is created,
+    // rather than immediately on page load.
+    if ('Notification' in window && Notification.permission === 'default') {
+        await initNotifications();
+        hideNotificationBanner();
+    }
 
     // Clear form
     domElements.taskTitle.value = '';
@@ -473,21 +509,59 @@ async function initNotifications() {
     return false;
 }
 
-function sendBrowserNotification(title, body, tag) {
-    if (!notificationPermission) return;
+function showNotificationBanner() {
+    if (!domElements.notificationBanner) return;
+    if (!('Notification' in window) || Notification.permission !== 'default') return;
+    if (localStorage.getItem('notification_banner_dismissed') === 'true') return;
+    domElements.notificationBanner.style.display = 'flex';
+}
 
-    new Notification(title, {
+function hideNotificationBanner() {
+    if (domElements.notificationBanner) domElements.notificationBanner.style.display = 'none';
+}
+
+function sendBrowserNotification(title, body, tag) {
+    if (!notificationPermission || !('Notification' in window)) return null;
+
+    const notification = new Notification(title, {
         body: body,
         icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>',
         tag: tag,
-        requireInteraction: true
+        requireInteraction: true,
+        silent: false,
+        vibrate: [500, 200, 500, 200, 500]
     });
+
+    notification.onclick = () => {
+        window.focus();
+        notification.close();
+    };
+
+    return notification;
+}
+
+// ----------------------------------------
+// Alarm sound - repeating two-tone ring
+// ----------------------------------------
+
+function getAlarmAudioContext() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+
+    if (!alarmAudioCtx) {
+        alarmAudioCtx = new AudioContextClass();
+    }
+    if (alarmAudioCtx.state === 'suspended') {
+        alarmAudioCtx.resume();
+    }
+    return alarmAudioCtx;
 }
 
 function playAlertSound() {
+    // Single beep, used for the reminder toast (non-looping quick alert).
     try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const context = new AudioContext();
+        const context = getAlarmAudioContext();
+        if (!context) return;
         const oscillator = context.createOscillator();
         const gainNode = context.createGain();
 
@@ -496,61 +570,227 @@ function playAlertSound() {
 
         oscillator.frequency.value = 880;
         oscillator.type = 'sine';
-        gainNode.gain.value = 0.3;
+        gainNode.gain.value = 0.4;
 
         oscillator.start();
         gainNode.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.5);
         oscillator.stop(context.currentTime + 0.5);
-
-        if (context.state === 'suspended') {
-            context.resume();
-        }
     } catch (error) {
         console.log('Sound not supported');
     }
 }
 
-function checkRemindersAndAutoComplete() {
+function playAlarmTone() {
+    // Two-tone "ring" burst, like a phone alarm chirp.
+    const context = getAlarmAudioContext();
+    if (!context) return;
+
+    [880, 660].forEach((freq, i) => {
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+
+        const startTime = context.currentTime + i * 0.18;
+        oscillator.frequency.value = freq;
+        oscillator.type = 'square';
+        gainNode.gain.setValueAtTime(0.0001, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.5, startTime + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.16);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.18);
+    });
+}
+
+function startRinging() {
+    stopRinging();
+    playAlarmTone();
+    ringIntervalId = setInterval(playAlarmTone, 700);
+}
+
+function stopRinging() {
+    if (ringIntervalId) {
+        clearInterval(ringIntervalId);
+        ringIntervalId = null;
+    }
+}
+
+// ----------------------------------------
+// Alarm scheduling - checks due/reminder times and queues alarms
+// ----------------------------------------
+
+function getEffectiveDueTime(task) {
+    return new Date(task.snoozedUntil || task.dueDateTime);
+}
+
+function enqueueAlarm(taskId, kind) {
+    const alreadyQueued = alarmQueue.some(a => a.taskId === taskId) ||
+        (activeAlarm && activeAlarm.taskId === taskId);
+    if (!alreadyQueued) {
+        alarmQueue.push({ taskId, kind });
+    }
+}
+
+function checkAlarms() {
     const now = new Date();
-    let needsRender = false;
+    console.log(`[Alarm Check] ${now.toLocaleTimeString()} - scanning ${tasks.length} task(s)`);
+
+    let needsSave = false;
 
     tasks.forEach(task => {
         if (task.completed) return;
 
-        const dueDate = new Date(task.dueDateTime);
+        const due = getEffectiveDueTime(task);
 
-        // Auto-complete if past due
-        if (now >= dueDate && !task.completed) {
-            task.completed = true;
-            needsRender = true;
-            sendBrowserNotification(
-                '✅ Task Auto-Completed',
-                `"${task.title}" was automatically completed at its deadline.`,
-                task.id
-            );
-            showToast(`⏰ "${task.title}" auto-completed`, 'info');
+        // Reminder: N minutes before the (possibly snoozed) due time.
+        if (task.reminderMinutes > 0 && !task.reminderFired) {
+            const reminderTime = new Date(due.getTime() - task.reminderMinutes * 60000);
+            if (now >= reminderTime && now < due) {
+                task.reminderFired = true;
+                needsSave = true;
+                enqueueAlarm(task.id, 'reminder');
+            }
         }
 
-        // Send reminder if due soon and not sent
-        if (task.reminderMinutes > 0 && !task.reminderSent) {
-            const reminderTime = new Date(dueDate.getTime() - (task.reminderMinutes * 60000));
-            if (now >= reminderTime && now < dueDate) {
-                task.reminderSent = true;
-                needsRender = true;
-                sendBrowserNotification(
-                    '⏰ Task Reminder',
-                    `"${task.title}" is due in ${task.reminderMinutes} minutes!`,
-                    task.id
-                );
-                playAlertSound();
-                showToast(`🔔 Reminder: "${task.title}" due soon!`, 'warning');
-            }
+        // Due: the task's time has arrived.
+        if (!task.dueFired && now >= due) {
+            task.dueFired = true;
+            needsSave = true;
+            enqueueAlarm(task.id, 'due');
         }
     });
 
-    if (needsRender) {
+    if (needsSave) {
         saveTasks();
         renderTasks();
+    }
+
+    processAlarmQueue();
+    resetCountdown();
+}
+
+function processAlarmQueue() {
+    if (activeAlarm || alarmQueue.length === 0) return;
+
+    const next = alarmQueue.shift();
+    const task = tasks.find(t => t.id === next.taskId);
+
+    // Task may have been deleted/completed since it was queued.
+    if (!task || task.completed) {
+        processAlarmQueue();
+        return;
+    }
+
+    activeAlarm = next;
+    showAlarmModal(task, next.kind);
+    startRinging();
+
+    const title = next.kind === 'due' ? '🚨 Task Due' : '⏰ Task Reminder';
+    const body = next.kind === 'due'
+        ? `"${task.title}" is due now!`
+        : `"${task.title}" is due in ${task.reminderMinutes} minutes!`;
+    sendBrowserNotification(title, body, task.id);
+
+    if (navigator.vibrate) {
+        navigator.vibrate([500, 200, 500, 200, 500]);
+    }
+}
+
+function showAlarmModal(task, kind) {
+    if (!domElements.alarmModal) return;
+
+    domElements.alarmKindLabel.textContent = kind === 'due' ? '🚨 TASK DUE' : '⏰ REMINDER';
+    domElements.alarmTaskTitle.textContent = task.title;
+    domElements.alarmTaskDesc.textContent = task.description || '';
+    domElements.alarmTaskDesc.style.display = task.description ? 'block' : 'none';
+    domElements.alarmPriority.textContent = `${getPriorityIcon(task.priority)} ${task.priority.toUpperCase()}`;
+    domElements.alarmCategory.textContent = `${getCategoryIcon(task.category)} ${task.category}`;
+    domElements.alarmDueTime.textContent = `📅 ${new Date(task.dueDateTime).toLocaleString()}`;
+
+    domElements.alarmModal.classList.add('active');
+}
+
+function hideAlarmModal() {
+    if (domElements.alarmModal) domElements.alarmModal.classList.remove('active');
+    stopRinging();
+    activeAlarm = null;
+    // Small delay before showing the next queued alarm, so the UI doesn't jump instantly.
+    setTimeout(processAlarmQueue, 300);
+}
+
+function handleAlarmComplete() {
+    if (!activeAlarm) return;
+    const task = tasks.find(t => t.id === activeAlarm.taskId);
+    if (task) {
+        task.completed = true;
+        saveTasks();
+        renderTasks();
+        showToast(`✅ Completed: ${task.title}`, 'success');
+    }
+    hideAlarmModal();
+}
+
+function handleAlarmSnooze() {
+    if (!activeAlarm) return;
+    const task = tasks.find(t => t.id === activeAlarm.taskId);
+    if (task) {
+        task.snoozedUntil = new Date(Date.now() + SNOOZE_MINUTES * 60000).toISOString();
+        // Reminder already fired once; only the due-time alarm should re-fire after the snooze.
+        task.dueFired = false;
+        saveTasks();
+        renderTasks();
+        showToast(`🔕 Snoozed "${task.title}" for ${SNOOZE_MINUTES} minutes`, 'info');
+    }
+    hideAlarmModal();
+}
+
+function handleAlarmDismiss() {
+    if (!activeAlarm) return;
+    const task = tasks.find(t => t.id === activeAlarm.taskId);
+    if (task) {
+        // Keep the task active, but don't re-ring immediately - push the next
+        // check out by the snooze window without changing the displayed due date.
+        task.snoozedUntil = new Date(Date.now() + SNOOZE_MINUTES * 60000).toISOString();
+        if (activeAlarm.kind === 'due') task.dueFired = false;
+        saveTasks();
+        showToast(`❌ Dismissed - will alert again in ${SNOOZE_MINUTES} min`, 'info');
+    }
+    hideAlarmModal();
+}
+
+function testAlarm() {
+    const task = tasks.find(t => !t.completed) || {
+        id: '__test__',
+        title: 'Test Alarm Task',
+        description: 'This is a test of the alarm system.',
+        dueDateTime: new Date().toISOString(),
+        priority: 'high',
+        category: 'other',
+        reminderMinutes: 0,
+        completed: false
+    };
+    // Ensure it's found by handleAlarmComplete/Snooze/Dismiss if it's a real task.
+    if (task.id !== '__test__' && !tasks.some(t => t.id === task.id)) {
+        tasks.push(task);
+    }
+    enqueueAlarm(task.id, 'due');
+    processAlarmQueue();
+    console.log(`[Alarm Test] Triggered test alarm at ${new Date().toLocaleTimeString()}`);
+}
+
+// ----------------------------------------
+// Debug countdown indicator
+// ----------------------------------------
+
+function resetCountdown() {
+    countdownSecondsLeft = ALARM_CHECK_MS / 1000;
+    updateCountdownIndicator();
+}
+
+function updateCountdownIndicator() {
+    if (domElements.nextCheckIndicator) {
+        domElements.nextCheckIndicator.textContent = `Next check in ${countdownSecondsLeft}s`;
     }
 }
 
@@ -741,6 +981,26 @@ function attachEventListeners() {
 
     if (domElements.themeToggle) domElements.themeToggle.addEventListener('click', toggleTheme);
 
+    // Alarm modal buttons (no click-outside-to-close: must use a button)
+    if (domElements.alarmCompleteBtn) domElements.alarmCompleteBtn.addEventListener('click', handleAlarmComplete);
+    if (domElements.alarmSnoozeBtn) domElements.alarmSnoozeBtn.addEventListener('click', handleAlarmSnooze);
+    if (domElements.alarmDismissBtn) domElements.alarmDismissBtn.addEventListener('click', handleAlarmDismiss);
+    if (domElements.testAlarmBtn) domElements.testAlarmBtn.addEventListener('click', testAlarm);
+
+    // Notification permission banner
+    if (domElements.enableNotificationsBtn) {
+        domElements.enableNotificationsBtn.addEventListener('click', async () => {
+            await initNotifications();
+            hideNotificationBanner();
+        });
+    }
+    if (domElements.dismissBannerBtn) {
+        domElements.dismissBannerBtn.addEventListener('click', () => {
+            localStorage.setItem('notification_banner_dismissed', 'true');
+            hideNotificationBanner();
+        });
+    }
+
     // Set default date/time
     const now = new Date();
     const defaultDate = now.toISOString().split('T')[0];
@@ -772,20 +1032,34 @@ async function init() {
     loadTasks();
     initTheme();
     attachEventListeners();
-    await initNotifications();
+    // Notification permission is requested on first task creation, not here.
+    if ('Notification' in window && Notification.permission === 'granted') notificationPermission = true;
+    showNotificationBanner();
     renderTasks();
 
-    // Start reminder checker (every 30 seconds)
-    notificationInterval = setInterval(() => {
-        checkRemindersAndAutoComplete();
-    }, 30000);
+    // Run an immediate check, then poll every ALARM_CHECK_MS (5s).
+    checkAlarms();
+    alarmCheckIntervalId = setInterval(checkAlarms, ALARM_CHECK_MS);
+
+    // Background tabs throttle setInterval; catch up as soon as the tab regains focus.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') checkAlarms();
+    });
+
+    // 1-second debug countdown ("next check in Xs")
+    countdownIntervalId = setInterval(() => {
+        countdownSecondsLeft = Math.max(0, countdownSecondsLeft - 1);
+        updateCountdownIndicator();
+    }, 1000);
 
     console.log(`✅ Programmable Todo initialized with ${tasks.length} tasks`);
 }
 
 // Cleanup
 window.addEventListener('beforeunload', () => {
-    if (notificationInterval) clearInterval(notificationInterval);
+    if (alarmCheckIntervalId) clearInterval(alarmCheckIntervalId);
+    if (countdownIntervalId) clearInterval(countdownIntervalId);
+    stopRinging();
 });
 
 // Start the app

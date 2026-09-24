@@ -142,6 +142,32 @@
         <button id="dismissBannerBtn" class="btn-small btn-secondary">Dismiss</button>
     </div>
 
+    <!-- Debug panel: manual test trigger + next-check countdown -->
+    <div id="debugPanel" class="debug-panel">
+        <span id="nextCheckIndicator">Next check in 5s</span>
+        <button id="testAlarmBtn" class="btn-small">🔔 Test Alarm</button>
+    </div>
+
+    <!-- Full-screen Alarm Modal (dismiss only via buttons, not by clicking outside) -->
+    <div id="alarmModal" class="alarm-modal">
+        <div class="alarm-modal-content">
+            <div class="alarm-icon">⏰</div>
+            <div id="alarmKindLabel" class="alarm-kind-label">TASK DUE</div>
+            <h2 id="alarmTaskTitle" class="alarm-task-title"></h2>
+            <p id="alarmTaskDesc" class="alarm-task-desc"></p>
+            <div class="alarm-meta">
+                <span id="alarmPriority" class="meta-item"></span>
+                <span id="alarmCategory" class="meta-item"></span>
+                <span id="alarmDueTime" class="meta-item"></span>
+            </div>
+            <div class="alarm-actions">
+                <button id="alarmSnoozeBtn" class="alarm-btn alarm-btn-snooze">🔕 Snooze 5 min</button>
+                <button id="alarmCompleteBtn" class="alarm-btn alarm-btn-complete">✅ Complete Task</button>
+                <button id="alarmDismissBtn" class="alarm-btn alarm-btn-dismiss">❌ Dismiss</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../shared/js/utils.js"></script>
     <script src="js/app.js"></script>
 </body>
