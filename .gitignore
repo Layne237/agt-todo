@@ -22,3 +22,7 @@ npm-debug.log*
 # Optional: if you use any build tools (not needed for this project)
 node_modules/
 dist/
+# Local dev server VAPID keys (scripts/dev-server.js)
+.dev-vapid.json
+.env*.local
+.vercel

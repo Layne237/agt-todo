@@ -5,7 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programmable Todo - Smart Task Manager</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AGT Todo">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+
     <link rel="stylesheet" href="../shared/css/common.css">
+    <link rel="stylesheet" href="../shared/css/pwa.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/x-icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>">
@@ -14,7 +25,7 @@
 <body>
     <!-- Navigation Bar -->
     <nav class="nav-bar">
-        <div class="nav-brand">
+        <div class="nav-brand" id="appLogo">
             <span>⏰</span>
             <span>Programmable Todo</span>
         </div>
@@ -40,6 +51,21 @@
 
     <!-- Main Container -->
     <div class="container">
+        <!-- Background alarm status (permission / install / push state) -->
+        <div id="alarmStatus" class="alarm-status alarm-status-info" role="status" aria-live="polite">
+            <span id="alarmStatusIcon" class="alarm-status-icon">⏳</span>
+            <span id="alarmStatusText" class="alarm-status-text">Setting up alarms…</span>
+            <div id="alarmStatusActions" class="alarm-status-actions"></div>
+        </div>
+
+        <!-- Missed Alarms (alarms that went off while the app was closed) -->
+        <section id="missedAlarmsSection" class="missed-alarms-section" style="display: none;">
+            <h3 class="missed-alarms-title">⚠️ Missed Alarms <span id="missedAlarmsCount"
+                    class="missed-alarms-count">0</span></h3>
+            <p class="missed-alarms-subtitle">These went off while you were away.</p>
+            <div id="missedAlarmsList" class="missed-alarms-list"></div>
+        </section>
+
         <!-- Add Task Section -->
         <section class="add-task-section">
             <h2>📅 Create Smart Task</h2>
@@ -135,17 +161,25 @@
         </section>
     </div>
 
-    <!-- Notification Permission Banner -->
-    <div id="notificationBanner" class="notification-banner" style="display: none;">
-        <span>🔔 Enable notifications to get reminders for your tasks</span>
-        <button id="enableNotificationsBtn" class="btn-small">Enable</button>
-        <button id="dismissBannerBtn" class="btn-small btn-secondary">Dismiss</button>
-    </div>
-
-    <!-- Debug panel: manual test trigger + next-check countdown -->
-    <div id="debugPanel" class="debug-panel">
-        <span id="nextCheckIndicator">Next check in 5s</span>
-        <button id="testAlarmBtn" class="btn-small">🔔 Test Alarm</button>
+    <!-- Hidden dev menu: Ctrl+Shift+D or tap the logo 5 times -->
+    <div id="devMenu" class="dev-menu" role="dialog" aria-modal="true" aria-label="Developer menu">
+        <div class="dev-menu-content">
+            <div class="dev-menu-header">
+                <h3>🛠️ Dev Menu</h3>
+                <span id="nextCheckIndicator" class="dev-menu-indicator">Next in-page check in 5s</span>
+            </div>
+            <div class="dev-menu-buttons">
+                <button class="btn-small" data-dev="bg-notification">🔔 Test background notification</button>
+                <button class="btn-small" data-dev="alarm-10s">⏱️ Test alarm in 10 seconds</button>
+                <button class="btn-small" data-dev="alarm-now">🚨 Ring in-page alarm now</button>
+                <button class="btn-small" data-dev="sw-status">⚙️ Service worker status</button>
+                <button class="btn-small" data-dev="permission">🔐 Check notification permission</button>
+                <button class="btn-small" data-dev="force-sync">🔄 Force sync now</button>
+                <button class="btn-small" data-dev="event-log">📜 Alarm event log</button>
+                <button class="btn-small btn-secondary" data-dev="close">✕ Close</button>
+            </div>
+            <pre id="devOutput" class="dev-output">Pick an action above.</pre>
+        </div>
     </div>
 
     <!-- Full-screen Alarm Modal (dismiss only via buttons, not by clicking outside) -->
@@ -160,6 +194,12 @@
                 <span id="alarmCategory" class="meta-item"></span>
                 <span id="alarmDueTime" class="meta-item"></span>
             </div>
+            <div class="alarm-timing">
+                <div id="alarmCountdown" class="alarm-countdown"></div>
+                <div id="alarmFiredAt" class="alarm-fired-at"></div>
+            </div>
+            <div id="alarmSoundHint" class="alarm-sound-hint" style="display: none;">🔇 Tap anywhere to turn on the alarm
+                sound</div>
             <div class="alarm-actions">
                 <button id="alarmSnoozeBtn" class="alarm-btn alarm-btn-snooze">🔕 Snooze 5 min</button>
                 <button id="alarmCompleteBtn" class="alarm-btn alarm-btn-complete">✅ Complete Task</button>
@@ -169,6 +209,12 @@
     </div>
 
     <script src="../shared/js/utils.js"></script>
+    <script src="../shared/js/alarm-store.js"></script>
+    <script src="../shared/js/notification-manager.js"></script>
+    <script src="../shared/js/pwa-installer.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/alarm.js"></script>
+    <script src="js/dev-menu.js"></script>
     <script src="js/app.js"></script>
 </body>
 

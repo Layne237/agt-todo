@@ -1,0 +1,21 @@
+{
+  "name": "agt-todo",
+  "version": "3.1.0",
+  "private": true,
+  "description": "AGT Todo Suite - installable PWA with background alarms (static site + Vercel functions for Web Push)",
+  "scripts": {
+    "dev": "node scripts/dev-server.js",
+    "icons": "node scripts/generate-icons.js",
+    "vapid": "web-push generate-vapid-keys",
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.5"
+  }
+}
