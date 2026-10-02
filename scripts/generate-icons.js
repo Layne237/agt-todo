@@ -160,9 +160,14 @@ const targets = [
     { file: 'badge.png', size: 96, fn: badgeSample }
 ];
 
-fs.mkdirSync(OUT_DIR, { recursive: true });
-for (const t of targets) {
-    const png = render(t.size, t.fn);
-    fs.writeFileSync(path.join(OUT_DIR, t.file), png);
-    console.log(`✅ ${t.file} (${t.size}x${t.size}, ${png.length} bytes)`);
+// Reused by agt_todo_mobile/tool/generate_assets.js for the Flutter app icons.
+module.exports = { render, iconSample, badgeSample, roundedBg };
+
+if (require.main === module) {
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+    for (const t of targets) {
+        const png = render(t.size, t.fn);
+        fs.writeFileSync(path.join(OUT_DIR, t.file), png);
+        console.log(`✅ ${t.file} (${t.size}x${t.size}, ${png.length} bytes)`);
+    }
 }
